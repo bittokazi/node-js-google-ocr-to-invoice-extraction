@@ -5,9 +5,9 @@ var fs = require('fs');
 var request = require('request');
 var bodyParser = require('body-parser')
 
-var server_port = 5555;
+var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
 
-var server_ip_address = '127.0.0.1';
+var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
 
 app.use(bodyParser.json({limit: '50mb'}));
 
@@ -382,6 +382,6 @@ app.post('/fileupload', function(req, res){
     });
 });
 
-app.listen(5555, function(){
+app.listen(server_port, function(){
     console.log('listening on *:'+server_port);
 });
