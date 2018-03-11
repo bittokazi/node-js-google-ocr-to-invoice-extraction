@@ -1,0 +1,21 @@
+{
+    "name": "nodeocr",
+    "version": "1.0.0",
+    "description": "node ocr for google",
+    "main": "index.js",
+    "dependencies": {
+        "express": "^4.15.2",
+        "formidable": "^1.1.1",
+        "request": "^2.83.0",
+        "socket.io": "^1.7.3"
+    },
+    "scripts": {
+        "start": "node index.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "private": true
+    },
+    "author": "bitto kazi",
+    "license": "MIT"
+}

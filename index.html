@@ -1,0 +1,389 @@
+<html>
+    <head>
+        <title>Google OCR</title>
+        <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    </head>
+    <body>
+        <center>
+            <form action="fileupload" method="post" enctype="multipart/form-data">
+                <input type="file" name="filetoupload" id="filetoupload"><br />
+                <input type="submit">
+            </form>
+            <canvas id="myCanvas" width="800" height="1600" style="border:1px solid #000000;">
+
+            </canvas>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="border:1px solid #000000;">#</th>
+                        <th style="border:1px solid #000000;">Item</th>
+                        <th style="border:1px solid #000000;">Price</th>
+                    </tr>
+                </thead>
+                <tbody id="itemList">
+                    
+                </tbody>
+            </table>
+            <div id = "total"></div>
+        </center>
+
+        <script>
+            function encodeImageFileAsURL() {
+
+                var filesSelected = document.getElementById("filetoupload").files;
+                if (filesSelected.length > 0) {
+                    var fileToLoad = filesSelected[0];
+
+                    var fileReader = new FileReader();
+
+                    fileReader.onload = function(fileLoadedEvent) {
+                        var srcData = fileLoadedEvent.target.result.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
+                        $.ajax({
+                            type: "POST",
+                            url: 'fileupload',
+                            // The key needs to match your method's input parameter (case-sensitive).
+                            data: JSON.stringify({ content: srcData }),
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            success: function(data){
+                                drawData(data.OCR, data.fullOCR.responses[0].fullTextAnnotation.pages[0].blocks);
+                                $('#total').text(data.total);
+                                var htmlData = '';
+                                for(var i=0; i<data.itemList.length; i++) {
+                                    htmlData=htmlData+'<tr><td style="border:1px solid #000000;">'+(i+1)+'</td>';
+                                    htmlData=htmlData+'<td style="border:1px solid #000000;">'+data.itemList[i].item+'</td>';
+                                    htmlData=htmlData+'<td style="border:1px solid #000000;">'+data.itemList[i].price+'</td></tr>';
+                                }
+                                $('#itemList').html(htmlData);
+                            },
+                            failure: function(errMsg) {
+                                alert(errMsg);
+                            }
+                        });
+                    }
+                    fileReader.readAsDataURL(fileToLoad);
+                }
+            }
+            $(function () {
+                $('form').submit(function(event){
+                    event.preventDefault();
+                    encodeImageFileAsURL();
+                });
+            });
+            function drawData(data, fullOCR) {
+                var total = 0;
+                var total1 = 0;
+                var total_x = [];
+                var total_y = [];
+                var item = [];
+                var found = 0;
+                var itemList = [];
+                var itemNumber = 0;
+                var c = document.getElementById("myCanvas");
+                var ctx = c.getContext("2d");
+                ctx.clearRect(0, 0, c.width, c.height);
+                for(var i=1; i<data.length; i++) {
+                                        ctx.moveTo(data[i].boundingPoly.vertices[0].x,data[i].boundingPoly.vertices[0].y);
+                                        ctx.lineTo(data[i].boundingPoly.vertices[1].x,data[i].boundingPoly.vertices[1].y);
+                                        ctx.stroke();
+
+                    //                    ctx.font = "10px Arial";
+                    //                    ctx.fillText(1, data[i].boundingPoly.vertices[0].x, data[i].boundingPoly.vertices[0].y);
+
+                                        ctx.moveTo(data[i].boundingPoly.vertices[1].x,data[i].boundingPoly.vertices[1].y);
+                                        ctx.lineTo(data[i].boundingPoly.vertices[2].x,data[i].boundingPoly.vertices[2].y+5);
+                                        ctx.stroke();
+
+                    //                    ctx.font = "10px Arial";
+                    //                    ctx.fillText(2, data[i].boundingPoly.vertices[1].x, data[i].boundingPoly.vertices[1].y);
+
+                                        ctx.moveTo(data[i].boundingPoly.vertices[2].x,data[i].boundingPoly.vertices[2].y+5);
+                                        ctx.lineTo(data[i].boundingPoly.vertices[3].x,data[i].boundingPoly.vertices[3].y+5);
+                                        ctx.stroke();
+
+                    //                    ctx.font = "10px Arial";
+                    //                    ctx.fillText(3, data[i].boundingPoly.vertices[2].x, data[i].boundingPoly.vertices[2].y);
+
+                                        ctx.moveTo(data[i].boundingPoly.vertices[3].x,data[i].boundingPoly.vertices[3].y+5);
+                                        ctx.lineTo(data[i].boundingPoly.vertices[0].x,data[i].boundingPoly.vertices[0].y);
+                                        ctx.stroke();
+
+                    //                    ctx.font = "10px Arial";
+                    //                    ctx.fillText(4, data[i].boundingPoly.vertices[3].x, data[i].boundingPoly.vertices[3].y);
+
+                    ctx.font = "10px Arial";
+                    ctx.fillText(i, data[i].boundingPoly.vertices[3].x, data[i].boundingPoly.vertices[3].y);
+
+
+                    ctx.font = "10px Arial";
+                    ctx.fillText(data[i].description, data[i].boundingPoly.vertices[3].x+10, data[i].boundingPoly.vertices[3].y-5);
+
+//                    if(data[i].description.trim().toLowerCase().replace(/[^\w\s]/g,'')=='total' && data[i-1].description.trim().toLowerCase()=='sub') {
+//                        console.log(':::::::TOTAL::::::::::::>'+data[i].description.trim().toLowerCase());
+//                        total_x = [];
+//                        total_y = [];
+//                        total_x.push(data[i].boundingPoly.vertices[0].x);
+//                        total_y.push(data[i].boundingPoly.vertices[0].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[1].x);
+//                        total_y.push(data[i].boundingPoly.vertices[1].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[2].x);
+//                        total_y.push(data[i].boundingPoly.vertices[2].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[3].x);
+//                        total_y.push(data[i].boundingPoly.vertices[3].y);
+//                    }
+//                    else if(data[i].description.trim().toLowerCase().replace(/[^\w\s]/g,'')=='amount' && data[i-1].description.trim().toLowerCase()=='net')  {
+//                        console.log(':::::::TOTAL::::::::::::>'+data[i].description.trim().toLowerCase());
+//                        total_x = [];
+//                        total_y = [];
+//                        total_x.push(data[i].boundingPoly.vertices[0].x);
+//                        total_y.push(data[i].boundingPoly.vertices[0].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[1].x);
+//                        total_y.push(data[i].boundingPoly.vertices[1].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[2].x);
+//                        total_y.push(data[i].boundingPoly.vertices[2].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[3].x);
+//                        total_y.push(data[i].boundingPoly.vertices[3].y);
+//                    }
+//                    else if(data[i].description.trim().toLowerCase().replace(/[^\w\s]/g,'')=='amt' && data[i-1].description.trim().toLowerCase()=='net')  {
+//                        console.log(':::::::TOTAL::::::::::::>'+data[i].description.trim().toLowerCase());
+//                        total_x = [];
+//                        total_y = [];
+//                        total_x.push(data[i].boundingPoly.vertices[0].x);
+//                        total_y.push(data[i].boundingPoly.vertices[0].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[1].x);
+//                        total_y.push(data[i].boundingPoly.vertices[1].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[2].x);
+//                        total_y.push(data[i].boundingPoly.vertices[2].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[3].x);
+//                        total_y.push(data[i].boundingPoly.vertices[3].y);
+//                    }
+//                    else if(data[i].description.trim().toLowerCase().replace(/[^\w\s]/g,'')=='total' && data[i-1].description.trim().toLowerCase()=='invoice')  {
+//                        console.log(':::::::TOTAL::::::::::::>'+data[i].description.trim().toLowerCase());
+//                        total_x = [];
+//                        total_y = [];
+//                        total_x.push(data[i].boundingPoly.vertices[0].x);
+//                        total_y.push(data[i].boundingPoly.vertices[0].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[1].x);
+//                        total_y.push(data[i].boundingPoly.vertices[1].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[2].x);
+//                        total_y.push(data[i].boundingPoly.vertices[2].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[3].x);
+//                        total_y.push(data[i].boundingPoly.vertices[3].y);
+//                    }
+//                    else if(data[i].description.trim().toLowerCase().replace(/[^\w\s]/g,'')=='tal')  {
+//                        console.log(':::::::TOTAL::::::::::::>'+data[i].description.trim().toLowerCase());
+//                        total_x = [];
+//                        total_y = [];
+//                        total_x.push(data[i].boundingPoly.vertices[0].x);
+//                        total_y.push(data[i].boundingPoly.vertices[0].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[1].x);
+//                        total_y.push(data[i].boundingPoly.vertices[1].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[2].x);
+//                        total_y.push(data[i].boundingPoly.vertices[2].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[3].x);
+//                        total_y.push(data[i].boundingPoly.vertices[3].y);
+//                    } else if(data[i].description.trim().toLowerCase().replace(/[^\w\s]/g,'')=='totai') {
+//                        console.log(':::::::TOTAL::::::::::::>'+data[i].description.trim().toLowerCase());
+//                        total_x = [];
+//                        total_y = [];
+//                        total_x.push(data[i].boundingPoly.vertices[0].x);
+//                        total_y.push(data[i].boundingPoly.vertices[0].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[1].x);
+//                        total_y.push(data[i].boundingPoly.vertices[1].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[2].x);
+//                        total_y.push(data[i].boundingPoly.vertices[2].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[3].x);
+//                        total_y.push(data[i].boundingPoly.vertices[3].y);
+//                    } else if(data[i].description.trim().toLowerCase().replace(/[^\w\s]/g,'')=='total') {
+//                        console.log(':::::::TOTAL::::::::::::>'+data[i].description.trim().toLowerCase());
+//                        total_x = [];
+//                        total_y = [];
+//                        total_x.push(data[i].boundingPoly.vertices[0].x);
+//                        total_y.push(data[i].boundingPoly.vertices[0].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[1].x);
+//                        total_y.push(data[i].boundingPoly.vertices[1].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[2].x);
+//                        total_y.push(data[i].boundingPoly.vertices[2].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[3].x);
+//                        total_y.push(data[i].boundingPoly.vertices[3].y);
+//                    } else if(data[i].description.trim().toLowerCase().replace(/[^\w\s]/g,'')=='amount') {
+//                        console.log(':::::::TOTAL::::::::::::>'+data[i].description.trim().toLowerCase());
+//                        total_x = [];
+//                        total_y = [];
+//                        total_x.push(data[i].boundingPoly.vertices[0].x);
+//                        total_y.push(data[i].boundingPoly.vertices[0].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[1].x);
+//                        total_y.push(data[i].boundingPoly.vertices[1].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[2].x);
+//                        total_y.push(data[i].boundingPoly.vertices[2].y);
+//
+//                        total_x.push(data[i].boundingPoly.vertices[3].x);
+//                        total_y.push(data[i].boundingPoly.vertices[3].y);
+//                    }
+//                    if(total_y.length>0) {
+//                        for(var k=1; k<data.length; k++) {
+//                            if(total_y[0]-5<data[k].boundingPoly.vertices[0].y && total_y[0]+5>data[k].boundingPoly.vertices[0].y && total_x[0]<data[k].boundingPoly.vertices[0].x) {
+//                                console.log(k+': '+data[k].description.replace(/[^\d.-]/g,''));
+//                                if(!isNaN(parseFloat(data[k].description.replace(/[^\d.-]/g,'')))) {
+//                                    console.log(data[k].description.replace(/[^\d.-]/g,''));
+//                                    console.log(parseFloat(data[k].description.replace(/[^\d.-]/g,'')));
+//                                    if(total<parseFloat(data[k].description.replace(/[^\d.-]/g,''))) {
+//                                        total = parseFloat(data[k].description.replace(/[^\d.-]/g,''));
+//                                        found = 1;
+//                                    }
+//                                }
+//                            } else if(total_y[1]-5<data[k].boundingPoly.vertices[1].y && total_y[1]+5>data[k].boundingPoly.vertices[1].y && total_x[1]<data[k].boundingPoly.vertices[1].x) {
+//                                console.log(k+': '+data[k].description.replace(/[^\d.-]/g,''));
+//                                if(!isNaN(parseFloat(data[k].description.replace(/[^\d.-]/g,'')))) {
+//                                    console.log(data[k].description.replace(/[^\d.-]/g,''));
+//                                    console.log(parseFloat(data[k].description.replace(/[^\d.-]/g,'')));
+//                                    if(total<parseFloat(data[k].description.replace(/[^\d.-]/g,''))) {
+//                                        total = parseFloat(data[k].description.replace(/[^\d.-]/g,''));
+//                                        found = 1;
+//                                    }
+//                                }
+//                            } else if(total_y[2]-5<data[k].boundingPoly.vertices[2].y && total_y[2]+5>data[k].boundingPoly.vertices[2].y && total_x[2]<data[k].boundingPoly.vertices[2].x) {
+//                                console.log(k+': '+data[k].description.replace(/[^\d.-]/g,''));
+//                                if(!isNaN(parseFloat(data[k].description.replace(/[^\d.-]/g,'')))) {
+//                                    console.log(data[i].description.replace(/[^\d.-]/g,''));
+//                                    console.log(parseFloat(data[k].description.replace(/[^\d.-]/g,'')));
+//                                    if(total<parseFloat(data[k].description.replace(/[^\d.-]/g,''))) {
+//                                        total = parseFloat(data[k].description.replace(/[^\d.-]/g,''));
+//                                        found = 1;
+//                                    }
+//                                }
+//                            } else if(total_y[3]-5<data[k].boundingPoly.vertices[3].y && total_y[3]+5>data[k].boundingPoly.vertices[3].y && total_x[3]<data[k].boundingPoly.vertices[3].x) {
+//                                console.log(k+': '+data[k].description.replace(/[^\d.-]/g,''));
+//                                if(!isNaN(parseFloat(data[k].description.replace(/[^\d.-]/g,'')))) {
+//                                    console.log(data[k].description.replace(/[^\d.-]/g,''));
+//                                    console.log(parseFloat(data[k].description.replace(/[^\d.-]/g,'')));
+//                                    if(total<parseFloat(data[k].description.replace(/[^\d.-]/g,''))) {
+//                                        total = parseFloat(data[k].description.replace(/[^\d.-]/g,''));
+//                                        found = 1;
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        for(var k=1; k<data.length && found == 0; k++) {
+//                            if(k>i && total_x[0]-5<data[k].boundingPoly.vertices[0].x && total_x[0]+5>data[k].boundingPoly.vertices[0].x) {
+//                                console.log(k+':- '+data[k].description.replace(/[^\d.-]/g,''));
+//                                if(!isNaN(parseFloat(data[k].description.replace(/[^\d.-]/g,'')))) {
+//                                    console.log(data[k].description.replace(/[^\d.-]/g,''));
+//                                    console.log(parseFloat(data[k].description.replace(/[^\d.-]/g,'')));
+//                                    if(total<parseFloat(data[k].description.replace(/[^\d.-]/g,''))) {
+//                                        total = parseFloat(data[k].description.replace(/[^\d.-]/g,''));
+//                                    }
+//                                }
+//                            } else if(k>i && total_x[1]-5<data[k].boundingPoly.vertices[1].x && total_x[1]+5>data[k].boundingPoly.vertices[1].x) {
+//                                console.log(k+':- '+data[k].description.replace(/[^\d.-]/g,''));
+//                                if(!isNaN(parseFloat(data[k].description.replace(/[^\d.-]/g,'')))) {
+//                                    console.log(data[k].description.replace(/[^\d.-]/g,''));
+//                                    console.log(parseFloat(data[k].description.replace(/[^\d.-]/g,'')));
+//                                    if(total<parseFloat(data[k].description.replace(/[^\d.-]/g,''))) {
+//                                        total = parseFloat(data[k].description.replace(/[^\d.-]/g,''));
+//                                    }
+//                                }
+//                            } else if(k>i && total_x[2]-5<data[k].boundingPoly.vertices[2].x && total_x[2]+5>data[k].boundingPoly.vertices[2].x) {
+//                                console.log(k+':- '+data[k].description.replace(/[^\d.-]/g,''));
+//                                if(!isNaN(parseFloat(data[k].description.replace(/[^\d.-]/g,'')))) {
+//                                    console.log(data[i].description.replace(/[^\d.-]/g,''));
+//                                    console.log(parseFloat(data[k].description.replace(/[^\d.-]/g,'')));
+//                                    if(total<parseFloat(data[k].description.replace(/[^\d.-]/g,''))) {
+//                                        total = parseFloat(data[k].description.replace(/[^\d.-]/g,''));
+//                                    }
+//                                }
+//                            } else if(k>i && total_x[3]-5<data[k].boundingPoly.vertices[3].x && total_x[3]+5>data[k].boundingPoly.vertices[3].x) {
+//                                console.log(k+':- '+data[k].description.replace(/[^\d.-]/g,''));
+//                                if(!isNaN(parseFloat(data[k].description.replace(/[^\d.-]/g,'')))) {
+//                                    console.log(data[k].description.replace(/[^\d.-]/g,''));
+//                                    console.log(parseFloat(data[k].description.replace(/[^\d.-]/g,'')));
+//                                    if(total<parseFloat(data[k].description.replace(/[^\d.-]/g,''))) {
+//                                        total = parseFloat(data[k].description.replace(/[^\d.-]/g,''));
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        total_x = [];
+//                        total_y = [];
+//                    }
+//                    if(!isNaN(parseFloat(data[i].description.replace(/[^\d.-]/g,'')))) {
+//                        total1=parseFloat(data[i].description.replace(/[^\d.-]/g,''));
+//
+//
+//                    } else {
+//                        if(itemList[itemNumber]==undefined) {
+//                            itemList.push({ item: data[i].description });
+//                        } else {
+//                            itemList[itemList.length-1]['item'] = itemList[itemList.length-1]['item']+' '+data[i].description;
+//                        }
+//                    }
+//
+//                    if(data[i+1]!=undefined) {
+//                        if(data[i].boundingPoly.vertices[0].x<data[i+1].boundingPoly.vertices[0].x && data[i].boundingPoly.vertices[0].y-5<data[i+1].boundingPoly.vertices[0].y && data[i].boundingPoly.vertices[3].y+5>data[i+1].boundingPoly.vertices[0].y) {
+//                            itemList[itemList.length-1]['item'] = itemList[itemList.length-1]['item']+' '+data[i].description;
+//                        } else if(data[i].boundingPoly.vertices[0].x<data[i+1].boundingPoly.vertices[0].x && data[i].boundingPoly.vertices[0].y-5<data[i+1].boundingPoly.vertices[1].y && data[i].boundingPoly.vertices[3].y+5>data[i+1].boundingPoly.vertices[1].y) {
+//                            itemList[itemList.length-1]['item'] = itemList[itemList.length-1]['item']+' '+data[i].description;
+//                        } else if(data[i].boundingPoly.vertices[0].x<data[i+1].boundingPoly.vertices[0].x && data[i].boundingPoly.vertices[0].y-5<data[i+1].boundingPoly.vertices[2].y && data[i].boundingPoly.vertices[3].y+5>data[i+1].boundingPoly.vertices[2].y) {
+//                            itemList[itemList.length-1]['item'] = itemList[itemList.length-1]['item']+' '+data[i].description;
+//                        } else if(data[i].boundingPoly.vertices[0].x<data[i+1].boundingPoly.vertices[0].x && data[i].boundingPoly.vertices[0].y-5<data[i+1].boundingPoly.vertices[3].y && data[i].boundingPoly.vertices[3].y+5>data[i+1].boundingPoly.vertices[3].y) {
+//                            itemList[itemList.length-1]['item'] = itemList[itemList.length-1]['item']+' '+data[i].description;
+//                        } else {
+//                            if(!isNaN(parseFloat(data[i].description.replace(/[^\d.-]/g,''))) && data[0].boundingPoly.vertices[1].x-data[i].boundingPoly.vertices[1].x<50) { 
+//                                itemList[itemList.length-1]['price'] = parseFloat(data[i].description.replace(/[^\d.-]/g,''));
+//                                itemNumber++;
+//                            } else {
+//                                if(itemList[itemNumber]==undefined) {
+//                                    itemList.push({ item: data[i].description });
+//                                } else {
+//                                    itemList[itemList.length-1]['item'] = '';
+//                                }
+//                            }
+//                        }
+//                    }
+                }
+//                for(var i=0; i<itemList.length; i++) {
+//                    if(itemList[i].price==undefined) {
+//                        itemList.splice(i, 1);
+//                        i--;
+//                    } else if(itemList[i].price>=total || itemList[i].price<=0) {
+//                        itemList.splice(i, 1);
+//                        i--;
+//                    } else if(itemList[i].item=='') {
+//                        itemList.splice(i, 1); 
+//                        i--;
+//                    }
+//                }
+//                console.log(itemList);
+//                if(total != 0) {
+//                    $('#total').text('total: '+total);
+//                }
+//                else {
+//                    $('#total').text('total: '+total1);
+//                }
+            }
+        </script>
+    </body>
+</html>
